@@ -1,0 +1,25 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+        maven {
+            url 'https://naver.jfrog.io/artifactory/maven/'
+        }
+        maven { url "[<https://maven.google.com>](<https://maven.google.com/>)"}
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            url 'https://naver.jfrog.io/artifactory/maven/'
+        }
+        maven { url "[<https://maven.google.com>](<https://maven.google.com/>)"}
+    }
+}
+
+rootProject.name = "WhichHospital"
+include ':app'
