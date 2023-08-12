@@ -1,4 +1,4 @@
-package com.zzb.whichhospital.ui.theme
+package com.zzb.whichhospital.presentation.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

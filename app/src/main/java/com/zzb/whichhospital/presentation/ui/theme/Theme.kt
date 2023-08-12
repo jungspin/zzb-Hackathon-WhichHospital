@@ -1,4 +1,4 @@
-package com.zzb.whichhospital.ui.theme
+package com.zzb.whichhospital.presentation.ui.theme
 
 import android.app.Activity
 import android.os.Build

@@ -1,4 +1,4 @@
-package com.zzb.whichhospital
+package com.zzb.whichhospital.presentation.view
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -10,7 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.zzb.whichhospital.ui.theme.WhichHospitalTheme
+import com.zzb.whichhospital.presentation.ui.theme.WhichHospitalTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
