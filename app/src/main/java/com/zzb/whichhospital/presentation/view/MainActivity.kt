@@ -53,10 +53,10 @@ class MainActivity : ComponentActivity() {
     companion object {
         const val INTENT_KEY_DISEASE_ID = "DiseaseId"
         val diseaseContentList = listOf(
-            DiseaseContent(0, "뇌졸중", R.raw.lottie_medical_6),
-            DiseaseContent(1, "심근경색", R.raw.lottie_medical_2),
-            DiseaseContent(2, "뇌진탕", R.raw.lottie_medical_3),
-            DiseaseContent(3, "녹내장", R.raw.lottie_medical_4),
+            DiseaseContent(1, "뇌졸중", R.raw.lottie_medical_6),
+            DiseaseContent(2, "심근경색", R.raw.lottie_medical_2),
+            DiseaseContent(3, "뇌진탕", R.raw.lottie_medical_3),
+            DiseaseContent(4, "녹내장", R.raw.lottie_medical_4),
         )
     }
 }

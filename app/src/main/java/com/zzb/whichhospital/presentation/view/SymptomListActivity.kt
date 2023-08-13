@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -34,7 +33,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.zzb.whichhospital.data.local.AppDatabase
+import com.zzb.whichhospital.presentation.model.Disease
 import com.zzb.whichhospital.presentation.ui.theme.WhichHospitalTheme
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 
 /**
@@ -45,34 +49,34 @@ import com.zzb.whichhospital.presentation.ui.theme.WhichHospitalTheme
 private const val TAG = "SymptomActivityTest"
 
 class SymptomActivity : ComponentActivity() {
-    private val sampleDisease = SampleDisease(
-        id = 0,
-        diseaseName = "심근경색",
-        diseaseSymptom = SampleSymptom(
-            id = 0,
-            symptoms = listOf(
-                "운동하거나 빨리 걸을 때 가슴 통증, 압박감, 불쾌감이 느껴진다.",
-                "목∙어깨∙팔에 통증과 압박감이 느껴진다.",
-                "이유 없이 숨이 차고 가슴이 뛰다가 회복된다.",
-                "분명한 원인 없이 발생되는 갑작스럽고 심한 두통이 있다.",
-                "어지럽고 졸도할 것 같은 느낌이 있다.",
-            )
-        )
-    )
+    val diseaseDao by lazy {
+        AppDatabase.getInstance(this@SymptomActivity).diseaseDao()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val diseaseId = intent.getIntExtra(MainActivity.INTENT_KEY_DISEASE_ID, 0)
-        setContent {
-            RootSurface {
-                ListLayout(
-                    diseaseName = sampleDisease.diseaseName,
-                    isNeedButton = true
-                ) {
-                    SymptomList(disease = sampleDisease)
+        CoroutineScope(Dispatchers.IO).launch {
+            val diseaseEntity = diseaseDao.getDiseaseById(diseaseId.toLong())
+            val diseaseSample = Disease(
+                diseaseId = diseaseEntity.disease.diseaseId,
+                diseaseName = diseaseEntity.disease.diseaseName,
+                symptoms = diseaseEntity.symptoms.map { it.symptomContent }
+            )
+            CoroutineScope(Dispatchers.Main).launch {
+                setContent {
+                    RootSurface {
+                        ListLayout(
+                            diseaseName = diseaseSample.diseaseName,
+                            isNeedButton = true
+                        ) {
+                            SymptomList(disease = diseaseSample)
+                        }
+                    }
                 }
             }
         }
+
     }
 
     companion object {
@@ -129,12 +133,12 @@ fun ListLayout(diseaseName: String, isNeedButton: Boolean, content: @Composable 
 }
 
 @Composable
-fun SymptomList(disease: SampleDisease) {
+fun SymptomList(disease: Disease) {
     val listState = rememberLazyListState()
     LazyColumn(
         state = listState,
     ) {
-        items(disease.diseaseSymptom.symptoms) { symptom ->
+        items(disease.symptoms) { symptom ->
             SymptomItem(symptom = symptom)
         }
     }
@@ -215,18 +219,15 @@ data class SampleSymptom(
 @Preview(showBackground = true)
 @Composable
 fun SymptomActivityPreview() {
-    val sampleDisease = SampleDisease(
-        id = 0,
+    val sampleDisease = Disease(
+        diseaseId = 0L,
         diseaseName = "심근경색",
-        diseaseSymptom = SampleSymptom(
-            id = 0,
-            symptoms = listOf(
-                "운동하거나 빨리 걸을 때 가슴 통증, 압박감, 불쾌감이 느껴진다.",
-                "목∙어깨∙팔에 통증과 압박감이 느껴진다.",
-                "이유 없이 숨이 차고 가슴이 뛰다가 회복된다.",
-                "분명한 원인 없이 발생되는 갑작스럽고 심한 두통이 있다.",
-                "어지럽고 졸도할 것 같은 느낌이 있다.",
-            )
+        symptoms = listOf(
+            "운동하거나 빨리 걸을 때 가슴 통증, 압박감, 불쾌감이 느껴진다.",
+            "목∙어깨∙팔에 통증과 압박감이 느껴진다.",
+            "이유 없이 숨이 차고 가슴이 뛰다가 회복된다.",
+            "분명한 원인 없이 발생되는 갑작스럽고 심한 두통이 있다.",
+            "어지럽고 졸도할 것 같은 느낌이 있다.",
         )
     )
     WhichHospitalTheme {
