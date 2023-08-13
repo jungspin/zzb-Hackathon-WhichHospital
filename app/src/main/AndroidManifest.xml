@@ -2,6 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-feature
+        android:name="android.hardware.telephony"
+        android:required="false" />
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -12,10 +17,13 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.WhichHospital"
         tools:targetApi="31">
+        <activity android:name=".presentation.view.HospitalListActivity"
+            android:exported="true"/>
+        <activity android:name=".presentation.view.SymptomActivity"
+            android:exported="false"/>
         <activity
             android:name=".presentation.view.MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
             android:theme="@style/Theme.WhichHospital">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
