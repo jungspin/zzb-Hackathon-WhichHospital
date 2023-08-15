@@ -1,11 +1,12 @@
 package com.zzb.whichhospital.data.local
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 @Entity(tableName = "diseases")
 data class Disease(
     @PrimaryKey(autoGenerate = true)
-    val diseaseId: Long,
-    val diseaseName: String,
+    @ColumnInfo("disease_id") val diseaseId: Long,
+    @ColumnInfo("disease_name") val diseaseName: String,
 )

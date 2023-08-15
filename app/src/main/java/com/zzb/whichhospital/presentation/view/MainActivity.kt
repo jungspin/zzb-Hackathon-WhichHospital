@@ -39,7 +39,9 @@ import com.airbnb.lottie.compose.rememberLottieAnimatable
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.zzb.whichhospital.R
 import com.zzb.whichhospital.presentation.ui.theme.WhichHospitalTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -179,7 +181,7 @@ fun DiseaseItem(rawId: Int, diseaseName: String, clickAction: () -> Unit) {
  * @property diseaseRawId 컨텐츠 id
  */
 data class DiseaseContent(
-    val diseaseId: Int,
+    val diseaseId: Long,
     val diseaseName: String,
     val diseaseRawId: Int
 )

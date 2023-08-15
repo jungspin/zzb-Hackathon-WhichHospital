@@ -7,12 +7,12 @@ import androidx.room.Transaction
 @Dao
 interface DiseaseDao {
     @Query("SELECT * FROM diseases")
-    suspend fun getDiseases() : List<Disease>
+    fun getDiseases() : List<Disease>
 
-    @Query("SELECT * FROM diseases WHERE diseaseId = :id")
-    suspend fun getDiseaseById(id : Long): DiseaseWithSymtoms
+    @Query("SELECT * FROM diseases WHERE disease_id = :id")
+    fun getDiseaseById(id : Long): DiseaseWithSymptoms
 
     @Transaction
     @Query("SELECT * FROM diseases")
-    suspend fun getDiseasesWithSymptoms(): List<DiseaseWithSymtoms>
+    fun getDiseasesWithSymptoms(): List<DiseaseWithSymptoms>
 }

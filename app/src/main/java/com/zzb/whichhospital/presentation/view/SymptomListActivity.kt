@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -36,9 +37,8 @@ import androidx.compose.ui.unit.dp
 import com.zzb.whichhospital.data.local.AppDatabase
 import com.zzb.whichhospital.presentation.model.Disease
 import com.zzb.whichhospital.presentation.ui.theme.WhichHospitalTheme
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 
 /**
@@ -48,39 +48,40 @@ import kotlinx.coroutines.launch
  */
 private const val TAG = "SymptomActivityTest"
 
-class SymptomActivity : ComponentActivity() {
-    val diseaseDao by lazy {
-        AppDatabase.getInstance(this@SymptomActivity).diseaseDao()
-    }
+@AndroidEntryPoint
+class SymptomActivity: ComponentActivity() {
+
+    @Inject lateinit var appDatabase: AppDatabase
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val diseaseId = intent.getIntExtra(MainActivity.INTENT_KEY_DISEASE_ID, 0)
-        CoroutineScope(Dispatchers.IO).launch {
-            val diseaseEntity = diseaseDao.getDiseaseById(diseaseId.toLong())
-            val diseaseSample = Disease(
-                diseaseId = diseaseEntity.disease.diseaseId,
-                diseaseName = diseaseEntity.disease.diseaseName,
-                symptoms = diseaseEntity.symptoms.map { it.symptomContent }
-            )
-            CoroutineScope(Dispatchers.Main).launch {
-                setContent {
-                    RootSurface {
-                        ListLayout(
-                            diseaseName = diseaseSample.diseaseName,
-                            isNeedButton = true
-                        ) {
-                            SymptomList(disease = diseaseSample)
-                        }
-                    }
+        val diseaseId = intent.getLongExtra(MainActivity.INTENT_KEY_DISEASE_ID, 0)
+
+        setContent {
+            RootSurface {
+                ListLayout(
+                    diseaseName = sampleDisease.diseaseName,
+                    isNeedButton = true
+                ) {
+                    SymptomList(disease = sampleDisease)
                 }
             }
         }
-
     }
 
     companion object {
         const val INTENT_KEY_DISEASE_NAME = "DiseaseName"
+        val sampleDisease = Disease(
+            diseaseId = 0L,
+            diseaseName = "심근경색",
+            symptoms = listOf(
+                "운동하거나 빨리 걸을 때 가슴 통증, 압박감, 불쾌감이 느껴진다.",
+                "목∙어깨∙팔에 통증과 압박감이 느껴진다.",
+                "이유 없이 숨이 차고 가슴이 뛰다가 회복된다.",
+                "분명한 원인 없이 발생되는 갑작스럽고 심한 두통이 있다.",
+                "어지럽고 졸도할 것 같은 느낌이 있다.",
+            )
+        )
     }
 }
 
@@ -192,48 +193,13 @@ fun HospitalListButton(diseaseName: String) {
     }
 }
 
-/**
- * 화면 출력을 위한 샘플 질환 데이터 클래스
- *
- * @property id id
- * @property diseaseName 질환 이름
- * @property diseaseSymptom 질환 증상
- */
-data class SampleDisease(
-    val id: Int,
-    val diseaseName: String,
-    val diseaseSymptom: SampleSymptom,
-)
-
-/**
- * 화면 출력을 위한 샘플 증상 데이터 클래스
- *
- * @property id id
- * @property symptoms 증상
- */
-data class SampleSymptom(
-    val id: Int,
-    val symptoms: List<String>,
-)
-
 @Preview(showBackground = true)
 @Composable
 fun SymptomActivityPreview() {
-    val sampleDisease = Disease(
-        diseaseId = 0L,
-        diseaseName = "심근경색",
-        symptoms = listOf(
-            "운동하거나 빨리 걸을 때 가슴 통증, 압박감, 불쾌감이 느껴진다.",
-            "목∙어깨∙팔에 통증과 압박감이 느껴진다.",
-            "이유 없이 숨이 차고 가슴이 뛰다가 회복된다.",
-            "분명한 원인 없이 발생되는 갑작스럽고 심한 두통이 있다.",
-            "어지럽고 졸도할 것 같은 느낌이 있다.",
-        )
-    )
     WhichHospitalTheme {
         RootSurface {
-            ListLayout(sampleDisease.diseaseName, true) {
-                SymptomList(disease = sampleDisease)
+            ListLayout(SymptomActivity.sampleDisease.diseaseName, true) {
+                SymptomList(disease = SymptomActivity.sampleDisease)
             }
         }
     }

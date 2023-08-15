@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">병원어디로?</string>
+    <string name="title_activity_hospital_detail">HospitalDetailActivity</string>
 </resources>

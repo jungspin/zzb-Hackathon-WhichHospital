@@ -8,14 +8,13 @@ import androidx.room.PrimaryKey
 @Entity(tableName="symptoms", foreignKeys = [
     ForeignKey(
         entity = Disease::class,
-        parentColumns = ["diseaseId"],
-        childColumns = ["disease_id"],
-        onDelete = ForeignKey.CASCADE
+        parentColumns = ["disease_id"],
+        childColumns = ["disease_id"]
     )
 ] )
 data class Symptom(
     @PrimaryKey(autoGenerate = true)
-    val symptomId : Long,
-    val symptomContent : String,
+    @ColumnInfo("symptom_id") val symptomId : Long,
+    @ColumnInfo("symptom_content") val symptomContent : String,
     @ColumnInfo(name = "disease_id") val diseaseId : Long,
 )
