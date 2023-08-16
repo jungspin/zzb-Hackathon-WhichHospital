@@ -5,46 +5,59 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
-import android.widget.ImageButton
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
+import com.naver.maps.map.CameraPosition
+import com.naver.maps.map.compose.CameraPositionState
+import com.naver.maps.map.compose.ExperimentalNaverMapApi
+import com.naver.maps.map.compose.NaverMap
+import com.naver.maps.map.compose.rememberCameraPositionState
+import dagger.hilt.android.AndroidEntryPoint
+import okhttp3.internal.notify
 
 /**
  * 병원 리스트를 확인하는 화면
  * @author jungspin
  * @since 2023/08/13 3:16 PM
  */
+@AndroidEntryPoint
 class HospitalListActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,7 +65,11 @@ class HospitalListActivity : ComponentActivity() {
         val diseaseName = intent.getStringExtra(SymptomActivity.INTENT_KEY_DISEASE_NAME) ?: ""
         setContent {
             RootSurface {
-                ListLayout(diseaseName = diseaseName, isNeedButton = false) {
+                ListView(
+                    diseaseName = diseaseName,
+                    backButtonAction = { finish() },
+                    isNeedBottomButton = false
+                ) {
                     HospitalList(hospitalList = sampleData)
                 }
             }
@@ -90,9 +107,18 @@ fun HospitalList(hospitalList: List<SampleHospital>) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HospitalItem(hospital: SampleHospital) {
+    val context = LocalContext.current
+    val isVisibleDetail = remember {
+        mutableStateOf(false)
+    }
+
+    HospitalDetailDialog(visible = isVisibleDetail.value)
+
     Card(
+        onClick = { moveToHospitalDetail(context = context) },
         shape = RoundedCornerShape(5.dp),
         modifier = Modifier
             .fillMaxWidth()
@@ -109,7 +135,6 @@ fun HospitalItem(hospital: SampleHospital) {
                 textAlign = TextAlign.End,
             )
         }
-        val context = LocalContext.current
         val permissions = arrayOf(
             android.Manifest.permission.CALL_PHONE
         )
@@ -140,7 +165,7 @@ fun HospitalItem(hospital: SampleHospital) {
             )
 
             IconButton(
-                onClick = { /*TODO*/ },
+                onClick = { isVisibleDetail.value = true },
             ) {
                 Icon(
                     imageVector = Icons.Filled.Search,
@@ -151,6 +176,10 @@ fun HospitalItem(hospital: SampleHospital) {
         }
 
     }
+}
+
+fun moveToHospitalDetail(context: Context) {
+    context.startActivity(Intent(context, HospitalDetailActivity::class.java))
 }
 
 
@@ -172,8 +201,42 @@ fun checkPermission(
     } else {
         launcher.launch(permissions)
     }
-
 }
+
+@OptIn(ExperimentalNaverMapApi::class)
+@Composable
+fun HospitalDetailDialog(visible: Boolean){
+    if (visible) {
+        Dialog(onDismissRequest = { /*TODO*/ }) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight()
+                    .background(Color.Transparent),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth(0.8f)
+                        .fillMaxHeight(0.6f)
+                        .border(
+                            border = ButtonDefaults.outlinedButtonBorder,
+                            shape = RoundedCornerShape(15.dp)
+                        )
+                        .padding(12.dp),
+                ) {
+                    NaverMap(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight(0.3f),
+                    )
+                }
+            }
+        }
+    }
+}
+
+
 
 data class SampleHospital(
     val hospitalName: String,
@@ -185,7 +248,7 @@ data class SampleHospital(
 @Composable
 fun HospitalListPreview() {
     RootSurface {
-        ListLayout(diseaseName = "심근경색", isNeedButton = false) {
+        ListView(diseaseName = "심근경색", backButtonAction = {}, isNeedBottomButton = false) {
             HospitalList(hospitalList = HospitalListActivity.sampleData)
         }
     }

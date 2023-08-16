@@ -3,8 +3,10 @@ package com.zzb.whichhospital.presentation.view
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -12,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -33,12 +36,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.zzb.whichhospital.data.local.AppDatabase
+import androidx.lifecycle.asLiveData
+import com.zzb.whichhospital.base.Status
 import com.zzb.whichhospital.presentation.model.Disease
 import com.zzb.whichhospital.presentation.ui.theme.WhichHospitalTheme
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import com.zzb.whichhospital.presentation.view_model.SymptomListViewModel
+import dagger.hilt.android.AndroidEntryPoint
 
 
 /**
@@ -48,49 +51,75 @@ import kotlinx.coroutines.launch
  */
 private const val TAG = "SymptomActivityTest"
 
+@AndroidEntryPoint
 class SymptomActivity : ComponentActivity() {
-    val diseaseDao by lazy {
-        AppDatabase.getInstance(this@SymptomActivity).diseaseDao()
-    }
+
+    private val viewModel: SymptomListViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val diseaseId = intent.getIntExtra(MainActivity.INTENT_KEY_DISEASE_ID, 0)
-        CoroutineScope(Dispatchers.IO).launch {
-            val diseaseEntity = diseaseDao.getDiseaseById(diseaseId.toLong())
-            val diseaseSample = Disease(
-                diseaseId = diseaseEntity.disease.diseaseId,
-                diseaseName = diseaseEntity.disease.diseaseName,
-                symptoms = diseaseEntity.symptoms.map { it.symptomContent }
-            )
-            CoroutineScope(Dispatchers.Main).launch {
-                setContent {
-                    RootSurface {
-                        ListLayout(
-                            diseaseName = diseaseSample.diseaseName,
-                            isNeedButton = true
-                        ) {
-                            SymptomList(disease = diseaseSample)
+        val diseaseId = intent.getLongExtra(MainActivity.INTENT_KEY_DISEASE_ID, 0)
+
+        viewModel.getDiseaseById(diseaseId)
+        viewModel.diseaseStateFlow.asLiveData().observe(this) { uiState ->
+            setContent {
+                RootSurface {
+                    when (uiState.status) {
+                        Status.NONE -> {}
+                        Status.LOADING -> LoadingView()
+                        Status.SUCCESS -> {
+                            uiState.data?.let { disease ->
+                                ListView(
+                                    diseaseName = disease.diseaseName,
+                                    isNeedBottomButton = true,
+                                    backButtonAction = { finish() }
+                                ) {
+                                    SymptomList(disease = disease)
+                                }
+                            }
+                        }
+
+                        Status.FAIL -> {
+                            Toast.makeText(
+                                LocalContext.current,
+                                uiState.message,
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            finish()
+                        }
+
+                        Status.ERROR -> ErrorView {
+                            viewModel.getDiseaseById(diseaseId)
                         }
                     }
                 }
             }
         }
-
     }
 
     companion object {
         const val INTENT_KEY_DISEASE_NAME = "DiseaseName"
+        val sampleDisease = Disease(
+            diseaseId = 0L,
+            diseaseName = "심근경색",
+            symptoms = listOf(
+                "운동하거나 빨리 걸을 때 가슴 통증, 압박감, 불쾌감이 느껴진다.",
+                "목∙어깨∙팔에 통증과 압박감이 느껴진다.",
+                "이유 없이 숨이 차고 가슴이 뛰다가 회복된다.",
+                "분명한 원인 없이 발생되는 갑작스럽고 심한 두통이 있다.",
+                "어지럽고 졸도할 것 같은 느낌이 있다.",
+            )
+        )
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WhichHospitalAppBar(title: String) {
+fun WhichHospitalAppBar(title: String, backButtonAction: () -> Unit) {
     CenterAlignedTopAppBar(
         title = { Text(text = title, textAlign = TextAlign.Center) },
         navigationIcon = {
-            IconButton(onClick = { /**/ }) {
+            IconButton(onClick = { /* TODO 뒤로가기 구현 */ backButtonAction() }) {
                 Icon(
                     imageVector = Icons.Filled.ArrowBack,
                     contentDescription = "뒤로가기 버튼"
@@ -104,10 +133,15 @@ fun WhichHospitalAppBar(title: String) {
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun ListLayout(diseaseName: String, isNeedButton: Boolean, content: @Composable () -> Unit) {
+fun ListView(
+    diseaseName: String,
+    backButtonAction: () -> Unit,
+    isNeedBottomButton: Boolean,
+    content: @Composable () -> Unit
+) {
     Scaffold(
         topBar = {
-            WhichHospitalAppBar(title = diseaseName)
+            WhichHospitalAppBar(title = diseaseName) { backButtonAction() }
         },
     ) {
         Column(
@@ -125,7 +159,7 @@ fun ListLayout(diseaseName: String, isNeedButton: Boolean, content: @Composable 
         ) {
             content()
 
-            if (isNeedButton) {
+            if (isNeedBottomButton) {
                 HospitalListButton(diseaseName)
             }
         }
@@ -138,8 +172,10 @@ fun SymptomList(disease: Disease) {
     LazyColumn(
         state = listState,
     ) {
-        items(disease.symptoms) { symptom ->
-            SymptomItem(symptom = symptom)
+        disease.symptoms?.let {
+            items(it) { symptom ->
+                SymptomItem(symptom = symptom)
+            }
         }
     }
 }
@@ -192,48 +228,13 @@ fun HospitalListButton(diseaseName: String) {
     }
 }
 
-/**
- * 화면 출력을 위한 샘플 질환 데이터 클래스
- *
- * @property id id
- * @property diseaseName 질환 이름
- * @property diseaseSymptom 질환 증상
- */
-data class SampleDisease(
-    val id: Int,
-    val diseaseName: String,
-    val diseaseSymptom: SampleSymptom,
-)
-
-/**
- * 화면 출력을 위한 샘플 증상 데이터 클래스
- *
- * @property id id
- * @property symptoms 증상
- */
-data class SampleSymptom(
-    val id: Int,
-    val symptoms: List<String>,
-)
-
 @Preview(showBackground = true)
 @Composable
 fun SymptomActivityPreview() {
-    val sampleDisease = Disease(
-        diseaseId = 0L,
-        diseaseName = "심근경색",
-        symptoms = listOf(
-            "운동하거나 빨리 걸을 때 가슴 통증, 압박감, 불쾌감이 느껴진다.",
-            "목∙어깨∙팔에 통증과 압박감이 느껴진다.",
-            "이유 없이 숨이 차고 가슴이 뛰다가 회복된다.",
-            "분명한 원인 없이 발생되는 갑작스럽고 심한 두통이 있다.",
-            "어지럽고 졸도할 것 같은 느낌이 있다.",
-        )
-    )
     WhichHospitalTheme {
         RootSurface {
-            ListLayout(sampleDisease.diseaseName, true) {
-                SymptomList(disease = sampleDisease)
+            ListView(SymptomActivity.sampleDisease.diseaseName, {}, true) {
+                SymptomList(disease = SymptomActivity.sampleDisease)
             }
         }
     }

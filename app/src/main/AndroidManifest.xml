@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.CALL_PHONE" />
 
     <application
+        android:name=".base.BaseApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -17,10 +18,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.WhichHospital"
         tools:targetApi="31">
-        <activity android:name=".presentation.view.HospitalListActivity"
-            android:exported="true"/>
-        <activity android:name=".presentation.view.SymptomActivity"
+        <activity
+            android:name=".presentation.view.HospitalDetailActivity"
             android:exported="false"/>
+        <activity
+            android:name=".presentation.view.HospitalListActivity"
+            android:exported="true" />
+        <activity
+            android:name=".presentation.view.SymptomActivity"
+            android:exported="false" />
         <activity
             android:name=".presentation.view.MainActivity"
             android:exported="true"
