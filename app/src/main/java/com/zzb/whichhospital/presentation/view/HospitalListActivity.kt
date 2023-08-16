@@ -49,7 +49,11 @@ class HospitalListActivity : ComponentActivity() {
         val diseaseName = intent.getStringExtra(SymptomActivity.INTENT_KEY_DISEASE_NAME) ?: ""
         setContent {
             RootSurface {
-                ListLayout(diseaseName = diseaseName, isNeedButton = false) {
+                ListView(
+                    diseaseName = diseaseName,
+                    backButtonAction = { finish() },
+                    isNeedBottomButton = false
+                ) {
                     HospitalList(hospitalList = sampleData)
                 }
             }
@@ -152,7 +156,7 @@ fun HospitalItem(hospital: SampleHospital) {
     }
 }
 
-fun moveToHospitalDetail(context: Context){
+fun moveToHospitalDetail(context: Context) {
     context.startActivity(Intent(context, HospitalDetailActivity::class.java))
 }
 
@@ -188,7 +192,7 @@ data class SampleHospital(
 @Composable
 fun HospitalListPreview() {
     RootSurface {
-        ListLayout(diseaseName = "심근경색", isNeedButton = false) {
+        ListView(diseaseName = "심근경색", backButtonAction = {}, isNeedBottomButton = false) {
             HospitalList(hospitalList = HospitalListActivity.sampleData)
         }
     }

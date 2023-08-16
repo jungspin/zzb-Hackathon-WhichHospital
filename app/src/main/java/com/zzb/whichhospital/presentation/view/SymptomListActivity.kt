@@ -3,8 +3,10 @@ package com.zzb.whichhospital.presentation.view
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -34,11 +36,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.zzb.whichhospital.data.local.AppDatabase
+import androidx.lifecycle.asLiveData
+import com.zzb.whichhospital.base.Status
 import com.zzb.whichhospital.presentation.model.Disease
 import com.zzb.whichhospital.presentation.ui.theme.WhichHospitalTheme
+import com.zzb.whichhospital.presentation.view_model.SymptomListViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
 
 
 /**
@@ -49,21 +52,46 @@ import javax.inject.Inject
 private const val TAG = "SymptomActivityTest"
 
 @AndroidEntryPoint
-class SymptomActivity: ComponentActivity() {
+class SymptomActivity : ComponentActivity() {
 
-    @Inject lateinit var appDatabase: AppDatabase
+    private val viewModel: SymptomListViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val diseaseId = intent.getLongExtra(MainActivity.INTENT_KEY_DISEASE_ID, 0)
 
-        setContent {
-            RootSurface {
-                ListLayout(
-                    diseaseName = sampleDisease.diseaseName,
-                    isNeedButton = true
-                ) {
-                    SymptomList(disease = sampleDisease)
+        viewModel.getDiseaseById(diseaseId)
+        viewModel.diseaseStateFlow.asLiveData().observe(this) { uiState ->
+            setContent {
+                RootSurface {
+                    when (uiState.status) {
+                        Status.NONE -> {}
+                        Status.LOADING -> LoadingView()
+                        Status.SUCCESS -> {
+                            uiState.data?.let { disease ->
+                                ListView(
+                                    diseaseName = disease.diseaseName,
+                                    isNeedBottomButton = true,
+                                    backButtonAction = { finish() }
+                                ) {
+                                    SymptomList(disease = disease)
+                                }
+                            }
+                        }
+
+                        Status.FAIL -> {
+                            Toast.makeText(
+                                LocalContext.current,
+                                uiState.message,
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            finish()
+                        }
+
+                        Status.ERROR -> ErrorView {
+                            viewModel.getDiseaseById(diseaseId)
+                        }
+                    }
                 }
             }
         }
@@ -87,11 +115,11 @@ class SymptomActivity: ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WhichHospitalAppBar(title: String) {
+fun WhichHospitalAppBar(title: String, backButtonAction: () -> Unit) {
     CenterAlignedTopAppBar(
         title = { Text(text = title, textAlign = TextAlign.Center) },
         navigationIcon = {
-            IconButton(onClick = { /**/ }) {
+            IconButton(onClick = { /* TODO 뒤로가기 구현 */ backButtonAction() }) {
                 Icon(
                     imageVector = Icons.Filled.ArrowBack,
                     contentDescription = "뒤로가기 버튼"
@@ -105,10 +133,15 @@ fun WhichHospitalAppBar(title: String) {
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun ListLayout(diseaseName: String, isNeedButton: Boolean, content: @Composable () -> Unit) {
+fun ListView(
+    diseaseName: String,
+    backButtonAction: () -> Unit,
+    isNeedBottomButton: Boolean,
+    content: @Composable () -> Unit
+) {
     Scaffold(
         topBar = {
-            WhichHospitalAppBar(title = diseaseName)
+            WhichHospitalAppBar(title = diseaseName) { backButtonAction() }
         },
     ) {
         Column(
@@ -126,7 +159,7 @@ fun ListLayout(diseaseName: String, isNeedButton: Boolean, content: @Composable 
         ) {
             content()
 
-            if (isNeedButton) {
+            if (isNeedBottomButton) {
                 HospitalListButton(diseaseName)
             }
         }
@@ -139,8 +172,10 @@ fun SymptomList(disease: Disease) {
     LazyColumn(
         state = listState,
     ) {
-        items(disease.symptoms) { symptom ->
-            SymptomItem(symptom = symptom)
+        disease.symptoms?.let {
+            items(it) { symptom ->
+                SymptomItem(symptom = symptom)
+            }
         }
     }
 }
@@ -198,7 +233,7 @@ fun HospitalListButton(diseaseName: String) {
 fun SymptomActivityPreview() {
     WhichHospitalTheme {
         RootSurface {
-            ListLayout(SymptomActivity.sampleDisease.diseaseName, true) {
+            ListView(SymptomActivity.sampleDisease.diseaseName, {}, true) {
                 SymptomList(disease = SymptomActivity.sampleDisease)
             }
         }

@@ -1,4 +1,4 @@
-package com.zzb.whichhospital
+package com.zzb.whichhospital.base
 
 import android.app.Application
 import dagger.hilt.android.HiltAndroidApp

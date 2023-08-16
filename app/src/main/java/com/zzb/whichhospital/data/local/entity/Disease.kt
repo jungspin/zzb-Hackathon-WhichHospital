@@ -1,4 +1,4 @@
-package com.zzb.whichhospital.data.local
+package com.zzb.whichhospital.data.local.entity
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity

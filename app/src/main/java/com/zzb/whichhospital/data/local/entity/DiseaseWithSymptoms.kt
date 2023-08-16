@@ -1,4 +1,4 @@
-package com.zzb.whichhospital.data.local
+package com.zzb.whichhospital.data.local.entity
 
 import androidx.room.Embedded
 import androidx.room.Relation
