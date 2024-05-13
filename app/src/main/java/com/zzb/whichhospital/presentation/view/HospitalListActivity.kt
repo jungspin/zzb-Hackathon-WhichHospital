@@ -10,6 +10,7 @@ import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -31,8 +32,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -42,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.asLiveData
 import com.naver.maps.geometry.LatLng
 import com.naver.maps.map.CameraPosition
 import com.naver.maps.map.compose.CameraPositionState
@@ -49,6 +53,10 @@ import com.naver.maps.map.compose.ExperimentalNaverMapApi
 import com.naver.maps.map.compose.Marker
 import com.naver.maps.map.compose.MarkerState
 import com.naver.maps.map.compose.NaverMap
+import com.zzb.whichhospital.data.remote.dto.HospitalReq
+import com.zzb.whichhospital.presentation.model.Hospital
+import com.zzb.whichhospital.presentation.model.HospitalInfo
+import com.zzb.whichhospital.presentation.view_model.HospitalListViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 /**
@@ -56,12 +64,24 @@ import dagger.hilt.android.AndroidEntryPoint
  * @author jungspin
  * @since 2023/08/13 3:16 PM
  */
+
 @AndroidEntryPoint
 class HospitalListActivity : ComponentActivity() {
+
+    private val viewModel: HospitalListViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val diseaseName = intent.getStringExtra(SymptomActivity.INTENT_KEY_DISEASE_NAME) ?: ""
+
+        viewModel.getHospitalList(
+            HospitalReq(
+                pageNo = 1,
+                hospType = "11",
+                operateCode = "07"
+            )
+        )
+
         setContent {
             RootSurface {
                 ListView(
@@ -69,7 +89,16 @@ class HospitalListActivity : ComponentActivity() {
                     backButtonAction = { finish() },
                     isNeedBottomButton = false
                 ) {
-                    HospitalList(hospitalList = sampleData)
+                    var hospital by remember {
+                        mutableStateOf(Hospital())
+                    }
+                    viewModel.hospitalStateFlow.asLiveData().observe(this@HospitalListActivity) { data ->
+                        data.data?.let {
+                            hospital = it
+                        }
+
+                    }
+                    HospitalList(hospitalList = hospital.hospInfos)
                 }
             }
         }
@@ -78,33 +107,33 @@ class HospitalListActivity : ComponentActivity() {
 
     companion object {
         val sampleData = listOf(
-            SampleHospital(
-                hospitalName = "부산대 병원",
-                hospitalTel = "051-000-0000",
-                distanceFromHospital = 30,
-                hospitalLocation = LatLng(35.3282205, 129.0056385),
-                hospitalAddress = "경상남도 양산시 물금읍 금오로 20"
+            HospitalInfo(
+                hospName = "부산대병원",
+                hospTel = "051-000-0000",
+                hospX = 35.3282205,
+                hospY = 129.0056385,
+                hospAddr = "경상남도 양산시 물금읍 금오로 20"
             ),
-            SampleHospital(
-                hospitalName = "부산백병원",
-                hospitalTel = "051-000-0000",
-                distanceFromHospital = 45,
-                hospitalLocation = LatLng(35.1734932, 129.1819789),
-                hospitalAddress = "부산광역시 해운대구 해운대로 875"
+            HospitalInfo(
+                hospName = "부산백병원",
+                hospTel = "051-000-0000",
+                hospX = 35.1734932,
+                hospY = 129.1819789,
+                hospAddr = "경상남도 양산시 물금읍 금오로 20"
             ),
-            SampleHospital(
-                hospitalName = "서울대 병원",
-                hospitalTel = "02-0000-0000",
-                distanceFromHospital = 300,
-                hospitalLocation = LatLng(37.5795427, 126.9990602),
-                hospitalAddress = "서울특별시 종로구 대학로 101"
+            HospitalInfo(
+                hospName = "서울대 병원",
+                hospTel = "02-0000-0000",
+                hospX = 37.5795427,
+                hospY = 126.9990602,
+                hospAddr = "서울특별시 종로구 대학로 101"
             ),
         )
     }
 }
 
 @Composable
-fun HospitalList(hospitalList: List<SampleHospital>) {
+fun HospitalList(hospitalList: List<HospitalInfo>) {
     LazyColumn {
         items(hospitalList) { hospital ->
             HospitalItem(hospital = hospital)
@@ -114,7 +143,7 @@ fun HospitalList(hospitalList: List<SampleHospital>) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HospitalItem(hospital: SampleHospital) {
+fun HospitalItem(hospital: HospitalInfo) {
     val context = LocalContext.current
     val showDialog = remember {
         mutableStateOf(false)
@@ -136,9 +165,10 @@ fun HospitalItem(hospital: SampleHospital) {
             horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier.fillMaxWidth()
         ) {
-            SymptomText(text = hospital.hospitalName)
+            SymptomText(text = hospital.hospName)
             SymptomText(
-                text = "${hospital.distanceFromHospital}km",
+                // TODO: 거리 추가하기
+                text = "10km",
                 textAlign = TextAlign.End,
             )
         }
@@ -150,7 +180,7 @@ fun HospitalItem(hospital: SampleHospital) {
                 val areGranted = permissionsMap.values.reduce { acc, next -> acc && next }
                 if (areGranted) callToHospital(
                     context = context,
-                    tel = "tel:${hospital.hospitalTel}"
+                    tel = "tel:${hospital.hospTel}"
                 )
             }
         Row(
@@ -159,7 +189,7 @@ fun HospitalItem(hospital: SampleHospital) {
         ) {
             // TODO: 따로 빼기
             Text(
-                text = hospital.hospitalTel,
+                text = hospital.hospTel,
                 color = Color.Blue,
                 modifier = Modifier
                     .padding(horizontal = 16.dp)
@@ -205,7 +235,7 @@ fun checkPermission(
 
 @OptIn(ExperimentalNaverMapApi::class)
 @Composable
-fun HospitalDetailDialog(setShowDialog: (Boolean) -> Unit, hospital: SampleHospital) {
+fun HospitalDetailDialog(setShowDialog: (Boolean) -> Unit, hospital: HospitalInfo) {
     Dialog(
         onDismissRequest = { setShowDialog(false) },
         properties = DialogProperties(
@@ -227,11 +257,11 @@ fun HospitalDetailDialog(setShowDialog: (Boolean) -> Unit, hospital: SampleHospi
                         .fillMaxWidth()
                         .fillMaxHeight(0.7f),
                     cameraPositionState = CameraPositionState(
-                        position = CameraPosition(hospital.hospitalLocation, 11.0)
+                        position = CameraPosition(LatLng(hospital.hospX, hospital.hospY), 11.0)
                     )
                 ) {
                     Marker(
-                        state = MarkerState(position = hospital.hospitalLocation)
+                        state = MarkerState(position = LatLng(hospital.hospX, hospital.hospY))
                     )
                 }
                 Column(verticalArrangement = Arrangement.Center) {
@@ -239,33 +269,16 @@ fun HospitalDetailDialog(setShowDialog: (Boolean) -> Unit, hospital: SampleHospi
                         horizontalArrangement = Arrangement.SpaceBetween,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(text = hospital.hospitalName)
-                        Text(text = hospital.hospitalTel, color = Color.Blue)
+                        Text(text = hospital.hospName)
+                        Text(text = hospital.hospTel, color = Color.Blue)
                     }
-                    Text(text = hospital.hospitalAddress)
+                    Text(text = hospital.hospAddr)
                 }
             }
         }
     }
 }
 
-
-/**
- * 병원 정보 샘플 데이터 클래스
- *
- * @property hospitalName 병원 이름
- * @property hospitalTel 병원 전화번호
- * @property distanceFromHospital 현재 내 위치 - 병원 간 거리
- * @property hospitalLocation 병원 위치
- * @property hospitalAddress 병원 주소
- */
-data class SampleHospital(
-    val hospitalName: String,
-    val hospitalTel: String,
-    val distanceFromHospital: Int,
-    val hospitalLocation: LatLng = LatLng(0.0, 0.0),
-    val hospitalAddress: String = "",
-)
 
 @Preview(showBackground = true)
 @Composable

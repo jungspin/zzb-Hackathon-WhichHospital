@@ -7,11 +7,13 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -32,6 +34,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -108,6 +111,11 @@ class SymptomActivity : ComponentActivity() {
                 "이유 없이 숨이 차고 가슴이 뛰다가 회복된다.",
                 "분명한 원인 없이 발생되는 갑작스럽고 심한 두통이 있다.",
                 "어지럽고 졸도할 것 같은 느낌이 있다.",
+                "운동하거나 빨리 걸을 때 가슴 통증, 압박감, 불쾌감이 느껴진다.",
+                "목∙어깨∙팔에 통증과 압박감이 느껴진다.",
+                "이유 없이 숨이 차고 가슴이 뛰다가 회복된다.",
+                "분명한 원인 없이 발생되는 갑작스럽고 심한 두통이 있다.",
+                "어지럽고 졸도할 것 같은 느낌이 있다.",
             )
         )
     }
@@ -156,8 +164,12 @@ fun ListView(
                         bottom = 8.dp
                     )
                 )
+
         ) {
-            content()
+            Column(Modifier.weight(3f)) {
+                content()
+            }
+
 
             if (isNeedBottomButton) {
                 HospitalListButton(diseaseName)

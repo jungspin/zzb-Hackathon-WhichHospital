@@ -21,6 +21,9 @@ android {
 
         manifestPlaceholders = [NCP_CLIENT_ID:properties.getProperty('NCP_CLIENT_ID')]
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField "String", "SERVICE_KEY", properties['SERVICE_KEY']
+        buildConfigField "String", "HOSPITAL_BASE_URL", properties['HOSPITAL_BASE_URL']
         vectorDrawables {
             useSupportLibrary true
         }
