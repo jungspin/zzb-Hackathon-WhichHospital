@@ -1,7 +1,9 @@
 package com.zzb.whichhospital.presentation.view_model
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.android.gms.location.FusedLocationProviderClient
 import com.zzb.whichhospital.base.Status
 import com.zzb.whichhospital.data.remote.Model.HospitalResp
 import com.zzb.whichhospital.data.remote.dto.HospitalReq
@@ -21,7 +23,10 @@ import retrofit2.Response
 import javax.inject.Inject
 
 @HiltViewModel
-class HospitalListViewModel @Inject constructor(private val hospitalUseCase: HospitalUseCase) :
+class HospitalListViewModel @Inject constructor(
+    private val hospitalUseCase: HospitalUseCase,
+    private val fusedLocationProviderClient: FusedLocationProviderClient
+) :
     ViewModel() {
 
     private val _hospitalStateFlow = MutableStateFlow(
@@ -31,6 +36,18 @@ class HospitalListViewModel @Inject constructor(private val hospitalUseCase: Hos
         )
     )
     val hospitalStateFlow = _hospitalStateFlow.asStateFlow()
+
+    // 위치 권한 부여 여부
+    private val _grantedLocationStateFlow = MutableStateFlow(false)
+    var grantedLocationStateFlow = _grantedLocationStateFlow.asStateFlow()
+
+    fun setLocationPermission(isGranted: Boolean) {
+        _grantedLocationStateFlow.value.apply {
+            viewModelScope.launch {
+                _grantedLocationStateFlow.value = true
+            }
+        }
+    }
 
     fun getHospitalList(hospitalReq: HospitalReq) {
         _hospitalStateFlow.value.apply {
@@ -51,15 +68,16 @@ class HospitalListViewModel @Inject constructor(private val hospitalUseCase: Hos
                             ) {
                                 if (response.isSuccessful) {
                                     response.body()?.let {
-                                        val hospInfos = it.response.body.hospitalList.hospitalList.map { info ->
-                                            HospitalInfo(
-                                                hospName = info.hospName,
-                                                hospTel = info.hospTel,
-                                                hospX = info.yPos,
-                                                hospY = info.xPos,
-                                                hospAddr = info.addr,
-                                            )
-                                        }
+                                        val hospInfos =
+                                            it.response.body.hospitalList.hospitalList.map { info ->
+                                                HospitalInfo(
+                                                    hospName = info.hospName,
+                                                    hospTel = info.hospTel,
+                                                    hospX = info.yPos,
+                                                    hospY = info.xPos,
+                                                    hospAddr = info.addr,
+                                                )
+                                            }
                                         val body = it.response.body
 
                                         _hospitalStateFlow.value = UiState(

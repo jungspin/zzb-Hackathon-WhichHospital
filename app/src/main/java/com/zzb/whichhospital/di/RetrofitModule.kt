@@ -1,6 +1,7 @@
 package com.zzb.whichhospital.di
 
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import com.zzb.whichhospital.BuildConfig
 import com.zzb.whichhospital.data.remote.api.HospitalApi
 import dagger.Module
@@ -23,7 +24,7 @@ class RetrofitModule {
     @Provides
     fun getRetrofitInstance(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder().client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create(Gson()))
+            .addConverterFactory(GsonConverterFactory.create(GsonBuilder().setLenient().create()))
             .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
             .baseUrl(BuildConfig.HOSPITAL_BASE_URL)
             .build()
