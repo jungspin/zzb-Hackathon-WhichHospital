@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -32,6 +33,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -74,6 +76,11 @@ class HospitalListActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val diseaseName = intent.getStringExtra(SymptomActivity.INTENT_KEY_DISEASE_NAME) ?: ""
 
+        val permissions = arrayOf(
+            android.Manifest.permission.ACCESS_FINE_LOCATION,
+            android.Manifest.permission.ACCESS_COARSE_LOCATION
+        )
+
         viewModel.getHospitalList(
             HospitalReq(
                 pageNo = 1,
@@ -89,16 +96,33 @@ class HospitalListActivity : ComponentActivity() {
                     backButtonAction = { finish() },
                     isNeedBottomButton = false
                 ) {
-                    var hospital by remember {
-                        mutableStateOf(Hospital())
-                    }
-                    viewModel.hospitalStateFlow.asLiveData().observe(this@HospitalListActivity) { data ->
-                        data.data?.let {
-                            hospital = it
-                        }
+                    var hospital by remember { mutableStateOf(Hospital()) }
 
+                    CheckPermissions(
+                        context = LocalContext.current,
+                        permissions = permissions,
+                        onAlreadyGranted = { viewModel.setLocationPermission(true) }) { permissionsMap ->
+                        val areGranted = permissionsMap.values.reduce { acc, next -> acc && next }
+                        viewModel.setLocationPermission(areGranted)
                     }
+
+                    viewModel.grantedLocationStateFlow.asLiveData().observe(this) { isGranted ->
+                        if (isGranted) {
+                            viewModel.hospitalStateFlow.asLiveData()
+                                .observe(this@HospitalListActivity) { data ->
+                                    data.data?.let {
+                                        hospital = it
+                                    }
+
+                                }
+
+                        } else {
+                            // 권한 설득 다이얼로그
+                        }
+                    }
+
                     HospitalList(hospitalList = hospital.hospInfos)
+
                 }
             }
         }
@@ -275,6 +299,39 @@ fun HospitalDetailDialog(setShowDialog: (Boolean) -> Unit, hospital: HospitalInf
                     Text(text = hospital.hospAddr)
                 }
             }
+        }
+    }
+}
+
+/**
+ * 권한 확인
+ *
+ * @param context
+ * @param permissions
+ * @param onAlreadyGranted
+ * @param onRequestResultPermission
+ */
+@Composable
+fun CheckPermissions(
+    context: Context,
+    permissions: Array<String>,
+    onAlreadyGranted: () -> Unit,
+    onRequestResultPermission: (permissionsMap: Map<String, Boolean>) -> Unit,
+) {
+    val permissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissionsMap ->
+            onRequestResultPermission(permissionsMap)
+        }
+
+    if (permissions.all {
+            ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+        }) {
+        // 권한이 있는 경우
+        onAlreadyGranted()
+    } else {
+        // 권한이 없는 경우
+        LaunchedEffect(Unit) {
+            permissionLauncher.launch(permissions)
         }
     }
 }

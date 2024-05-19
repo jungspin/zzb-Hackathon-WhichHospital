@@ -1,22 +1,17 @@
 package com.zzb.whichhospital.presentation.view
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -37,7 +32,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -229,35 +223,11 @@ fun SymptomText(
 fun HospitalListButton(diseaseName: String) {
     val context = LocalContext.current
 
-    val permissions = arrayOf(
-        Manifest.permission.ACCESS_FINE_LOCATION,
-        Manifest.permission.ACCESS_COARSE_LOCATION
-    )
-
-    val launcherMultiplePermissions =
-        rememberLauncherForActivityResult(contract = ActivityResultContracts.RequestMultiplePermissions()) { permissionMap ->
-            val grantedAll = permissionMap.values.reduce { acc, next -> acc && next }
-            // 권한을 모두 동의한 경우
-            // 권한 동의 여부를 뷰모델로 전달?
-            // 동의한 경우 정보를 요청하고, 동의하지 않은 경우는..다이얼로그로 한번 더 호소? 토스트로 내보내버리기?
-
-            if (grantedAll) {
-                val intent = Intent(context, HospitalListActivity::class.java)
-                intent.putExtra(SymptomActivity.INTENT_KEY_DISEASE_NAME, diseaseName)
-                context.startActivity(intent)
-            }
-
-        }
-
     Button(
         onClick = {
-
-            checkPermission(
-                context = context,
-                permissions = permissions,
-                launcher = launcherMultiplePermissions
-            )
-
+            val intent = Intent(context, HospitalListActivity::class.java)
+            intent.putExtra(SymptomActivity.INTENT_KEY_DISEASE_NAME, diseaseName)
+            context.startActivity(intent)
         },
         modifier = Modifier
             .fillMaxWidth()

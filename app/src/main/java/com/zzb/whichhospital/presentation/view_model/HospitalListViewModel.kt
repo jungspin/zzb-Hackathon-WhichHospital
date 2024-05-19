@@ -44,7 +44,7 @@ class HospitalListViewModel @Inject constructor(
     fun setLocationPermission(isGranted: Boolean) {
         _grantedLocationStateFlow.value.apply {
             viewModelScope.launch {
-                _grantedLocationStateFlow.value = true
+                _grantedLocationStateFlow.value = isGranted
             }
         }
     }
