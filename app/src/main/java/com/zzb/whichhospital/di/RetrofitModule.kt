@@ -23,8 +23,11 @@ class RetrofitModule {
     @Singleton
     @Provides
     fun getRetrofitInstance(okHttpClient: OkHttpClient): Retrofit {
+        val gson: Gson = GsonBuilder()
+            .setLenient()
+            .create()
         return Retrofit.Builder().client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create(GsonBuilder().setLenient().create()))
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
             .baseUrl(BuildConfig.HOSPITAL_BASE_URL)
             .build()

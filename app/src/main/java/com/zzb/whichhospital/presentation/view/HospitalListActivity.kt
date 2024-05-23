@@ -55,6 +55,7 @@ import com.naver.maps.map.compose.ExperimentalNaverMapApi
 import com.naver.maps.map.compose.Marker
 import com.naver.maps.map.compose.MarkerState
 import com.naver.maps.map.compose.NaverMap
+import com.zzb.whichhospital.base.Status
 import com.zzb.whichhospital.data.remote.dto.HospitalReq
 import com.zzb.whichhospital.presentation.model.Hospital
 import com.zzb.whichhospital.presentation.model.HospitalInfo
@@ -88,16 +89,9 @@ class HospitalListActivity : ComponentActivity() {
                 operateCode = "07"
             )
         )
-
-        setContent {
-            RootSurface {
-                ListView(
-                    diseaseName = diseaseName,
-                    backButtonAction = { finish() },
-                    isNeedBottomButton = false
-                ) {
-                    var hospital by remember { mutableStateOf(Hospital()) }
-
+        viewModel.hospitalStateFlow.asLiveData().observe(this@HospitalListActivity) { data ->
+            setContent {
+                RootSurface {
                     CheckPermissions(
                         context = LocalContext.current,
                         permissions = permissions,
@@ -106,22 +100,38 @@ class HospitalListActivity : ComponentActivity() {
                         viewModel.setLocationPermission(areGranted)
                     }
 
-                    viewModel.grantedLocationStateFlow.asLiveData().observe(this) { isGranted ->
-                        if (isGranted) {
-                            viewModel.hospitalStateFlow.asLiveData()
-                                .observe(this@HospitalListActivity) { data ->
-                                    data.data?.let {
-                                        hospital = it
-                                    }
-
-                                }
-
-                        } else {
-                            // 권한 설득 다이얼로그
+                    ListView(
+                        diseaseName = diseaseName,
+                        backButtonAction = { finish() },
+                        isNeedBottomButton = false
+                    ) {
+                        var hospital by remember { mutableStateOf(Hospital()) }
+                        data.data?.let {
+                            hospital = it
                         }
+
+                        when (data.status) {
+                            Status.NONE -> Unit
+                            Status.LOADING -> LoadingView()
+                            Status.SUCCESS -> HospitalList(hospitalList = hospital.hospInfos)
+                            Status.FAIL -> {}
+                            Status.ERROR -> {
+                                Log.d("HospList", "${data.throwable?.localizedMessage}")
+                                ErrorView {
+                                    viewModel.getHospitalList(
+                                        HospitalReq(
+                                            pageNo = 1,
+                                            hospType = "11",
+                                            operateCode = "07"
+                                        )
+                                    )
+                                }
+                            }
+                        }
+
+
                     }
 
-                    HospitalList(hospitalList = hospital.hospInfos)
 
                 }
             }
@@ -192,7 +202,7 @@ fun HospitalItem(hospital: HospitalInfo) {
             SymptomText(text = hospital.hospName)
             SymptomText(
                 // TODO: 거리 추가하기
-                text = "10km",
+                text = "${hospital.hospDistance}km",
                 textAlign = TextAlign.End,
             )
         }

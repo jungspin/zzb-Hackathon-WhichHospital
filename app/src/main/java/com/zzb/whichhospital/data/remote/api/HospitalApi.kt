@@ -9,11 +9,12 @@ import retrofit2.http.Query
 
 interface HospitalApi {
 
+    // TODO: 지역 고려
     @GET("getHospBasisList")
     fun getHospBasisList(
         @Query("ServiceKey") serviceKey: String = BuildConfig.SERVICE_KEY,
         @Query("pageNo") pageNo: Int,
-        @Query("numOfRows") numOfRows: Int = 10,
+        @Query("numOfRows") numOfRows: Int = 100,
         @Query("clCd") hospType: String,
         @Query("dgsbjtCd") operateCode: String,
         @Query("_type") type: String = "json",

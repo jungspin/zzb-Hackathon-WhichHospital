@@ -13,5 +13,5 @@ data class HospitalInfo(
     val hospX: Double = 0.0,
     val hospY: Double = 0.0,
     val hospAddr: String = "",
-    val hospDistance: Double = 0.0,
+    val hospDistance: Long = 0L,
 )
